@@ -1,0 +1,49 @@
+UNITED HEALTHCARE MEDICAL POLICY BULLETIN 2026-HK-001
+Subject: Hyperkalemia Management - Inpatient Admission Criteria
+
+EFFECTIVE DATE: January 1, 2026
+
+MEDICAL NECESSITY CRITERIA FOR INPATIENT ADMISSION:
+
+Inpatient admission for hyperkalemia management is considered medically necessary 
+when ONE or MORE of the following criteria are met:
+
+1. LABORATORY CRITERIA:
+   - Serum potassium ≥ 5.5 mmol/L on repeat testing, OR
+   - Serum potassium ≥ 5.0 mmol/L with rapid rise (>0.5 mmol/L in 24 hours), OR
+   - Serum potassium ≥ 5.0 mmol/L with EKG changes
+
+2. ELECTROCARDIOGRAPHIC CRITERIA (any of the following):
+   - Peaked T waves
+   - Prolonged PR interval (>200ms)
+   - Widened QRS complex (>120ms)
+   - Sine wave pattern
+   - Any arrhythmia attributed to hyperkalemia
+
+3. CLINICAL CRITERIA:
+   - Hemodynamic instability requiring monitoring
+   - Acute kidney injury with oliguria (<400mL/24hr)
+   - Concurrent digitalis toxicity
+   - Failure of outpatient management (documented)
+   - Need for emergent dialysis
+   - Symptoms: muscle weakness, paralysis, palpitations
+
+4. COMORBIDITY CRITERIA:
+   - Active cardiac disease with hyperkalemia
+   - Post-cardiac surgery within 72 hours
+   - Tumor lysis syndrome (confirmed or high risk)
+   - Rhabdomyolysis
+
+IMPORTANT: Clinical judgment should be applied. Patients with values slightly 
+below thresholds may still qualify if there is documented clinical concern 
+or trajectory suggesting imminent deterioration.
+
+DOCUMENTATION REQUIREMENTS:
+- Serial potassium levels with timestamps
+- 12-lead EKG with physician interpretation
+- Clinical assessment documenting symptoms and exam findings
+- Treatment plan and rationale for inpatient level of care
+
+APPEAL PROCESS:
+Peer-to-peer review available within 48 hours of initial determination.
+Contact Medical Director at 1-800-555-0123.

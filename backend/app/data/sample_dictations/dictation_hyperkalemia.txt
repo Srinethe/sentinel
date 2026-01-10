@@ -1,0 +1,57 @@
+This is Dr. Murugan dictating on patient John Smith, date of birth March 15, 1958, 
+medical record number 8847291, date of service January 5th, 2026.
+
+Chief complaint: Weakness and fatigue for three days.
+
+History of present illness: Mr. Smith is a 67-year-old male with past medical 
+history significant for chronic kidney disease stage 3B, hypertension, type 2 
+diabetes, and gout who presents with progressive generalized weakness and 
+fatigue over the past three days. He reports difficulty climbing stairs and 
+getting out of chairs. He denies chest pain, shortness of breath, palpitations, 
+syncope, or near-syncope. He does report some mild nausea but no vomiting. 
+He has had decreased oral intake over the past few days. No recent medication 
+changes. He is compliant with his lisinopril 20 milligrams daily, metformin 
+1000 milligrams twice daily, and allopurinol 300 milligrams daily.
+
+Past medical history: CKD stage 3B with baseline creatinine around 2.1, 
+hypertension for 15 years, type 2 diabetes for 10 years, gout.
+
+Medications: Lisinopril 20 mg daily, metformin 1000 mg BID, allopurinol 300 mg 
+daily, aspirin 81 mg daily.
+
+Physical examination:
+Vital signs: Blood pressure 148 over 92, heart rate 76 and regular, 
+temperature 98.4 Fahrenheit, respiratory rate 16, oxygen saturation 97 percent 
+on room air.
+
+General: Alert, oriented, appears fatigued but in no acute distress.
+Cardiovascular: Regular rate and rhythm. Normal S1, S2. No murmurs.
+Extremities: No edema. Mild proximal muscle weakness bilateral lower extremities.
+
+Laboratory results from ED:
+Sodium 138, potassium 6.1 milliequivalents per liter, chloride 104, bicarb 20, 
+BUN 52, creatinine 2.9 up from baseline of 2.1, glucose 142. 
+Repeat potassium one hour later was 5.9.
+Magnesium 1.8, phosphorus 4.2, calcium 9.1.
+Troponin negative.
+
+EKG shows normal sinus rhythm at 74 beats per minute. PR interval normal. 
+Notable for peaked T waves in leads V2 through V5, consistent with hyperkalemia. 
+No ST segment changes. QRS duration 98 milliseconds.
+
+Assessment:
+1. Acute hyperkalemia with EKG changes in setting of acute on chronic kidney injury.
+2. Acute kidney injury on CKD stage 3B. Creatinine 2.9 from baseline 2.1.
+
+Plan:
+1. Admit to telemetry for continuous cardiac monitoring.
+2. IV calcium gluconate 1 gram for cardiac membrane stabilization.
+3. Regular insulin 10 units IV with D50 for intracellular potassium shift.
+4. Sodium polystyrene sulfonate 30 grams for potassium elimination.
+5. IV normal saline for volume resuscitation.
+6. Hold lisinopril.
+7. Recheck BMP in 4 hours.
+8. Nephrology consult if not improving.
+
+Dictated by Dr. Thiru Murugan, MD.
+End of dictation.

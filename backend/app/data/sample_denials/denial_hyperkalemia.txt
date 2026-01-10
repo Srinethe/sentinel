@@ -1,0 +1,60 @@
+================================================================================
+                           UNITED HEALTHCARE
+                        MEDICAL DETERMINATION NOTICE
+================================================================================
+
+DATE OF NOTICE: January 8, 2026
+NOTICE TYPE: Adverse Benefit Determination (Denial)
+
+--------------------------------------------------------------------------------
+MEMBER INFORMATION
+--------------------------------------------------------------------------------
+Member Name: John Michael Smith
+Member ID: UHC-8847291-01
+Date of Birth: March 15, 1958
+
+--------------------------------------------------------------------------------
+SERVICE INFORMATION
+--------------------------------------------------------------------------------
+Date of Service: January 5-7, 2026
+Claim Number: CLM-2026-8847592-001
+Service Requested: Inpatient Hospital Admission
+Diagnosis: Hyperkalemia (ICD-10: E87.5)
+
+--------------------------------------------------------------------------------
+                              DETERMINATION: DENIED
+--------------------------------------------------------------------------------
+
+After review of the submitted clinical documentation, we have determined that 
+the requested inpatient hospital admission does NOT meet medical necessity 
+criteria under the member's benefit plan.
+
+REASON FOR DENIAL:
+
+1. LABORATORY VALUES DO NOT MEET THRESHOLD:
+   The patient's serum potassium level of 5.3 mmol/L does not meet our 
+   established threshold of ≥ 5.5 mmol/L for hyperkalemia requiring 
+   inpatient management.
+
+2. INSUFFICIENT DOCUMENTATION OF CARDIAC INVOLVEMENT:
+   While the documentation mentions "EKG changes," the specific findings 
+   were not clearly documented.
+
+3. ALTERNATIVE LEVEL OF CARE AVAILABLE:
+   Based on the clinical presentation, observation status would be appropriate.
+
+POLICY REFERENCE:
+UnitedHealthcare Medical Policy Bulletin 2026-HK-001
+
+--------------------------------------------------------------------------------
+YOUR APPEAL RIGHTS
+--------------------------------------------------------------------------------
+
+** PEER-TO-PEER REVIEW **
+You may request a peer-to-peer review within 48 HOURS of this notice.
+Call: 1-800-555-0123, Option 3
+Reference: Case #DEN-2026-8847592
+
+================================================================================
+               PEER-TO-PEER MUST BE REQUESTED WITHIN 48 HOURS
+================================================================================

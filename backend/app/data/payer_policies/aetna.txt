@@ -1,0 +1,43 @@
+AETNA CLINICAL POLICY BULLETIN
+Number: 0847
+Subject: Inpatient Admission Criteria - Electrolyte Disorders
+
+EFFECTIVE DATE: January 1, 2026
+
+POLICY:
+Aetna considers inpatient admission for electrolyte disorders medically necessary 
+when clinical documentation supports the need for continuous monitoring and/or 
+interventions that cannot be safely provided in an outpatient setting.
+
+HYPERKALEMIA (ICD-11: 5A40):
+
+Inpatient admission is considered medically necessary when ANY of the following 
+are documented:
+
+A. SEVERE HYPERKALEMIA:
+   - Serum potassium ≥ 6.0 mmol/L, OR
+   - Serum potassium ≥ 5.5 mmol/L with ANY EKG abnormality
+
+B. MODERATE HYPERKALEMIA WITH COMPLICATIONS:
+   - Serum potassium 5.0-5.9 mmol/L WITH:
+     * EKG changes (peaked T waves, prolonged PR, widened QRS)
+     * Acute kidney injury (>50% rise in creatinine)
+     * Hemodynamic instability
+     * Failure of emergency department management
+
+C. RAPID CORRECTION REQUIRED:
+   - Need for IV calcium for cardiac stabilization
+   - Need for insulin/glucose infusion
+   - Need for emergent hemodialysis
+
+DOCUMENTATION REQUIREMENTS:
+1. Timed serum potassium levels (minimum 2 values)
+2. 12-lead EKG with interpretation
+3. Renal function tests
+4. Clinical notes documenting symptoms
+5. Treatment administered and response
+
+APPEAL PROCESS:
+Peer-to-peer review available within 24 hours.
+Standard appeals must be filed within 30 days.
+Contact: 1-800-AETNA-MD

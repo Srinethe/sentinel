@@ -1,0 +1,38 @@
+CIGNA MEDICAL COVERAGE POLICY
+Policy Number: MM-0492
+Subject: Observation vs. Inpatient Admission Criteria
+
+EFFECTIVE: January 2026
+
+INPATIENT ADMISSION CRITERIA:
+
+CARDIAC/ELECTROLYTE CONDITIONS:
+
+1. HYPERKALEMIA:
+   Inpatient Level of Care Criteria:
+   - K+ ≥ 5.8 mmol/L regardless of symptoms, OR
+   - K+ ≥ 5.2 mmol/L with cardiac manifestations, OR
+   - K+ ≥ 5.0 mmol/L with rapid rise and AKI
+   
+   Required Documentation:
+   - Serial potassium measurements with times
+   - Baseline and repeat EKG
+   - Creatinine/BUN
+   - Clinical assessment of symptoms
+   - Medication reconciliation (ACE-I, ARB, K-sparing diuretics, NSAIDs)
+
+OBSERVATION STATUS APPROPRIATE WHEN:
+- Expected to require < 24 hours of treatment
+- Low risk for deterioration
+- No anticipated need for surgery or invasive procedures
+
+IMPORTANT NOTICE:
+Cigna applies clinical judgment in all reviews. Patients with values 
+near thresholds may qualify for inpatient admission if:
+- Comorbidities increase risk
+- Social factors preclude safe discharge
+- Clinical trajectory suggests deterioration
+
+PEER-TO-PEER REVIEW:
+Available within 48 hours of adverse determination.
+Expedited review available for urgent cases.

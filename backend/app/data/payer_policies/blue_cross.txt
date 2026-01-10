@@ -1,0 +1,31 @@
+BLUE CROSS BLUE SHIELD
+Medical Policy Reference Guide
+Section: Inpatient Services
+Policy: IP-2026-001
+
+CRITERIA FOR INPATIENT HOSPITAL ADMISSION
+
+HYPERKALEMIA (E87.5):
+
+Tier 1 - Automatic Approval:
+- Potassium ≥ 6.5 mmol/L
+- Any potassium level with cardiac arrest or life-threatening arrhythmia
+- Potassium ≥ 6.0 mmol/L with EKG changes
+
+Tier 2 - Requires Clinical Review:
+- Potassium 5.5 - 5.9 mmol/L with risk factors
+- Potassium ≥ 5.0 mmol/L with acute kidney injury
+- Failed outpatient management
+
+Risk Factors That Support Admission:
+- Chronic kidney disease stage 4-5
+- Heart failure with reduced EF
+- Recent cardiac surgery
+- Concurrent use of multiple K+-raising medications
+- History of life-threatening hyperkalemia
+- Unreliable access to follow-up care
+
+APPEAL INFORMATION:
+First-level appeal: Submit within 180 days
+Peer-to-peer: Available within 24-48 hours
+Expedited appeal: 72 hours for urgent situations

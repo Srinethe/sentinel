@@ -1,0 +1,260 @@
+# ==================== Python ====================
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# ==================== Node.js / Next.js ====================
+# Dependencies
+node_modules/
+/.pnp
+.pnp.js
+
+# Testing
+/coverage
+
+# Next.js
+/.next/
+/out/
+
+# Production
+/build
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Local env files
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# ==================== Environment Variables ====================
+# Backend
+backend/.env
+backend/.env.local
+backend/.env.*.local
+
+# Frontend
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+
+# ==================== IDE / Editors ====================
+# VSCode
+.vscode/
+*.code-workspace
+
+# IntelliJ / PyCharm
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# ==================== OS Files ====================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# ==================== Project Specific ====================
+# ChromaDB data (vector store)
+backend/.chroma/
+backend/chroma_db/
+*.chroma
+
+# Logs
+*.log
+logs/
+backend/logs/
+frontend/logs/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Generated files (keep sample data, ignore generated test files)
+backend/app/data/sample_denials/*.pdf
+!backend/app/data/sample_denials/denial_hyperkalemia.txt
+backend/app/data/sample_dictations/*.wav
+backend/app/data/sample_dictations/*.mp3
+
+# Database files (if using local DB)
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# ==================== Build Artifacts ====================
+# Python
+*.pyc
+*.pyo
+*.pyd
+
+# Compiled files
+*.class
+*.jar
+*.war
+*.ear
+
+# Archives
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+
+# ==================== Documentation Build ====================
+docs/_build/
+docs/.doctrees/
+site/
+
+# ==================== Misc ====================
+# Keep this file
+!.gitignore
+
+# Keep README and docs
+!README.md
+!*.md
+!docs/
+
+# Keep requirements files
+!requirements.txt
+!package.json
+!package-lock.json
+
+# Keep example/template files
+!.env.example
+!*.example
+!*.template

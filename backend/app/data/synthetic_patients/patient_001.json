@@ -1,0 +1,21 @@
+{
+  "patient_id": "PAT-001",
+  "demographics": {
+    "first_name": "John",
+    "last_name": "Smith",
+    "date_of_birth": "1958-03-15",
+    "age": 67,
+    "gender": "Male",
+    "mrn": "8847291"
+  },
+  "insurance": {
+    "payer": "United Healthcare",
+    "member_id": "UHC-8847291-01",
+    "group_number": "GRP-449281"
+  },
+  "medical_history": {
+    "conditions": ["CKD Stage 3B", "Hypertension", "Type 2 Diabetes", "Gout"]
+  },
+  "medications": ["Lisinopril 20mg daily", "Metformin 1000mg BID", "Allopurinol 300mg daily"],
+  "baseline_labs": {"creatinine": 2.1, "potassium": 4.8, "gfr": 35}
+}
