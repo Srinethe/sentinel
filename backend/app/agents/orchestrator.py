@@ -152,7 +152,17 @@ class SentinelOrchestrator:
     
     async def _run_scribe(self, state: SentinelState) -> dict:
         """Run Agent 1: The Ear - Ambient Scribe"""
-        await self._emit_update(state["case_id"], "scribe", "running", "Listening to dictation...")
+        case_id = state.get("case_id", "unknown")
+        print(f"👂 [Scribe] Starting dictation processing for case: {case_id}")
+        
+        # Log input to verify it's fresh
+        dictation_text = state.get("dictation_text", "")
+        has_audio = bool(state.get("audio_bytes"))
+        print(f"📝 [Scribe] Input: {'Audio file' if has_audio else f'Text dictation ({len(dictation_text)} chars)'}")
+        if dictation_text:
+            print(f"   Preview: {dictation_text[:150]}...")
+        
+        await self._emit_update(case_id, "scribe", "running", "Listening to dictation...")
         
         try:
             if state.get("audio_bytes"):
@@ -163,6 +173,11 @@ class SentinelOrchestrator:
                 result = await self.scribe.process_text(state["dictation_text"])
             else:
                 result = {"error": "No audio or text provided"}
+            
+            print(f"✅ [Scribe] Processing complete:")
+            print(f"   Transcript length: {len(result.get('raw_transcript', ''))}")
+            print(f"   Clinical entities: {len(result.get('clinical_entities', []))}")
+            print(f"   Assessment: {result.get('soap_note', {}).get('assessment', 'N/A')[:100]}")
             
             await self._emit_update(
                 state["case_id"], "scribe", "complete",
@@ -190,14 +205,34 @@ class SentinelOrchestrator:
     
     async def _run_coder(self, state: SentinelState) -> dict:
         """Run Agent 2: The Brain - Policy Auditor"""
-        await self._emit_update(state["case_id"], "coder", "running", "Auditing against payer policies...")
+        case_id = state.get("case_id", "unknown")
+        print(f"🧠 [Coder] Starting audit for case: {case_id}")
+        
+        # Log the input data to verify it's fresh
+        soap_note = state.get("soap_note", {})
+        clinical_entities = state.get("clinical_entities", [])
+        proposed_treatments = state.get("proposed_treatments", [])
+        
+        print(f"📋 [Coder] Input data:")
+        print(f"   SOAP Assessment: {soap_note.get('assessment', 'N/A')[:100]}")
+        print(f"   Clinical entities count: {len(clinical_entities)}")
+        if clinical_entities:
+            print(f"   First entity: {clinical_entities[0]}")
+        print(f"   Proposed treatments: {proposed_treatments}")
+        
+        await self._emit_update(case_id, "coder", "running", "Auditing against payer policies...")
         
         try:
             result = await self.coder.process(
-                soap_note=state.get("soap_note", {}),
-                clinical_entities=state.get("clinical_entities", []),
-                proposed_treatments=state.get("proposed_treatments", [])
+                soap_note=soap_note,
+                clinical_entities=clinical_entities,
+                proposed_treatments=proposed_treatments
             )
+            
+            print(f"✅ [Coder] Audit complete:")
+            print(f"   ICD codes: {len(result.get('icd_codes', []))}")
+            print(f"   Alerts: {len(result.get('preemptive_alerts', []))}")
+            print(f"   Denial risk: {result.get('denial_risk', 'N/A')}")
             
             # Generate alert message
             alerts = result.get("preemptive_alerts", [])
@@ -231,16 +266,21 @@ class SentinelOrchestrator:
     
     async def _run_intake(self, state: SentinelState) -> dict:
         """Run Agent 3: The Sorter - PDF Intake"""
-        await self._emit_update(state["case_id"], "intake", "running", "Reading denial PDF...")
+        case_id = state.get("case_id", "unknown")
+        print(f"🔍 [Intake] Starting PDF processing for case: {case_id}")
+        await self._emit_update(case_id, "intake", "running", "Reading denial PDF...")
         
         try:
             pdf_bytes = state.get("pdf_bytes")
             if not pdf_bytes:
                 error_msg = "No PDF bytes provided in state"
-                await self._emit_update(state["case_id"], "intake", "error", error_msg)
+                print(f"❌ [Intake] {error_msg}")
+                await self._emit_update(case_id, "intake", "error", error_msg)
                 return {"error": error_msg, "agent_logs": [{"agent": "intake", "status": "error", "message": error_msg}]}
             
+            print(f"📄 [Intake] PDF size: {len(pdf_bytes)} bytes, calling intake.process()...")
             result = await self.intake.process(pdf_bytes)
+            print(f"✅ [Intake] Processing complete. Denial detected: {result.get('is_denial', False)}")
             
             if result.get("error"):
                 error_msg = f"Intake processing error: {result.get('error')}"
@@ -350,13 +390,23 @@ Clinical Entities:
     
     async def process_denial(self, case_id: str, patient_name: str, pdf_bytes: bytes) -> dict:
         """Process denial PDF through Intake -> Rebuttal workflow"""
+        print(f"📋 Creating initial state for denial workflow: case_id={case_id}")
         initial_state = self._create_initial_state(
             case_id=case_id,
             patient_name=patient_name,
             pdf_bytes=pdf_bytes,
             workflow_type="denial"
         )
-        return await self.denial_graph.ainvoke(initial_state)
+        print(f"🔄 Invoking denial graph...")
+        try:
+            result = await self.denial_graph.ainvoke(initial_state)
+            print(f"✅ Denial graph completed successfully")
+            return result
+        except Exception as e:
+            import traceback
+            print(f"❌ Error in denial graph: {str(e)}")
+            print(traceback.format_exc())
+            raise
     
     async def process_full_case(self, case_id: str, patient_name: str,
                                  audio_bytes: bytes = None, dictation_text: str = None,
@@ -374,19 +424,27 @@ Clinical Entities:
     
     def _create_initial_state(self, **kwargs) -> SentinelState:
         """Create initial state with defaults"""
+        # Ensure we're creating a fresh state - don't reuse any cached data
+        dictation_text = kwargs.get("dictation_text")
+        audio_bytes = kwargs.get("audio_bytes")
+        
+        print(f"🆕 Creating fresh initial state for case: {kwargs.get('case_id', 'unknown')}")
+        print(f"   Has dictation_text: {bool(dictation_text)} ({len(dictation_text) if dictation_text else 0} chars)")
+        print(f"   Has audio_bytes: {bool(audio_bytes)} ({len(audio_bytes) if audio_bytes else 0} bytes)")
+        
         return {
             "case_id": kwargs.get("case_id", ""),
             "patient_name": kwargs.get("patient_name", ""),
-            "audio_bytes": kwargs.get("audio_bytes"),
-            "dictation_text": kwargs.get("dictation_text"),
+            "audio_bytes": audio_bytes,  # Use fresh input
+            "dictation_text": dictation_text,  # Use fresh input
             "pdf_bytes": kwargs.get("pdf_bytes"),
             "workflow_type": kwargs.get("workflow_type", "full"),
-            "raw_transcript": "",
-            "soap_note": {},
-            "clinical_entities": [],
-            "proposed_treatments": [],
-            "chief_complaint": "",
-            "icd_codes": [],
+            "raw_transcript": "",  # Fresh empty state
+            "soap_note": {},  # Fresh empty state
+            "clinical_entities": [],  # Fresh empty state
+            "proposed_treatments": [],  # Fresh empty state
+            "chief_complaint": "",  # Fresh empty state
+            "icd_codes": [],  # Fresh empty state
             "policy_gaps": [],
             "preemptive_alerts": [],
             "medical_necessity_score": 0.0,

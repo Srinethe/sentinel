@@ -12,7 +12,8 @@ class IntakeAgent:
         settings = get_settings()
         self.client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
         # Claude 3.5 Sonnet supports PDF documents directly
-        self.model = "claude-3-5-sonnet-20241022"
+        # Use the correct model identifier - try standard name first
+        self.model = "claude-3-5-sonnet-20240620"  # Stable model version
     
     async def process(self, pdf_bytes: bytes = None) -> dict:
         """Process a denial PDF and extract key information"""
@@ -24,7 +25,25 @@ class IntakeAgent:
                 "error": "No PDF provided"
             }
         
-        pdf_b64 = base64.standard_b64encode(pdf_bytes).decode("utf-8")
+        # Validate PDF size (max 10MB for API)
+        pdf_size_mb = len(pdf_bytes) / (1024 * 1024)
+        if pdf_size_mb > 10:
+            return {
+                "is_denial": False,
+                "extraction": None,
+                "error": f"PDF too large ({pdf_size_mb:.2f}MB). Maximum size is 10MB."
+            }
+        
+        print(f"📄 Processing PDF: {pdf_size_mb:.2f}MB")
+        
+        try:
+            pdf_b64 = base64.standard_b64encode(pdf_bytes).decode("utf-8")
+        except Exception as e:
+            return {
+                "is_denial": False,
+                "extraction": None,
+                "error": f"Failed to encode PDF: {str(e)}"
+            }
         
         extraction_prompt = """Analyze this insurance document and extract information.
 
@@ -48,26 +67,73 @@ Rules:
 - Be thorough - denial reasons are often buried in dense paragraphs"""
 
         try:
-            # Anthropic API: PDFs need to be sent as document type (Claude 3.5+ supports PDFs directly)
-            # For older models, we'd need to convert to images, but 3.5 Sonnet supports PDF
-            response = await self.client.messages.create(
-                model=self.model,
-                max_tokens=1500,
-                messages=[{
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "document",
-                            "source": {
-                                "type": "base64",
-                                "media_type": "application/pdf",
-                                "data": pdf_b64
-                            }
-                        },
-                        {"type": "text", "text": extraction_prompt}
-                    ]
-                }]
-            )
+            # Anthropic API: Try document type first (Claude 3.5+ supports PDFs directly)
+            # If model not found, try alternative models
+            response = None
+            last_error = None
+            models_to_try = [
+                "claude-3-5-sonnet-20240620",  # Most stable
+                "claude-3-5-sonnet",  # Without version
+                "claude-3-opus-20240229",  # Alternative
+                "claude-3-5-haiku-20241022"  # Fastest
+            ]
+            
+            import asyncio
+            
+            for model_name in models_to_try:
+                try:
+                    print(f"🔄 Trying model: {model_name}...")
+                    # Add timeout to prevent hanging (60 seconds)
+                    # Wrap the API call in asyncio.wait_for to add timeout
+                    response = await asyncio.wait_for(
+                        self.client.messages.create(
+                            model=model_name,
+                            max_tokens=1500,
+                            messages=[{
+                                "role": "user",
+                                "content": [
+                                    {
+                                        "type": "document",
+                                        "source": {
+                                            "type": "base64",
+                                            "media_type": "application/pdf",
+                                            "data": pdf_b64
+                                        }
+                                    },
+                                    {"type": "text", "text": extraction_prompt}
+                                ]
+                            }]
+                        ),
+                        timeout=60.0  # 60 second timeout
+                    )
+                    print(f"✅ Successfully used model: {model_name}")
+                    self.model = model_name  # Update to working model
+                    break
+                except asyncio.TimeoutError:
+                    last_error = Exception(f"Timeout waiting for {model_name}")
+                    print(f"⏱️  Model {model_name} timed out after 65 seconds")
+                    continue  # Try next model
+                except Exception as model_err:
+                    error_str = str(model_err).lower()
+                    # Check if it's a model not found error
+                    if any(keyword in error_str for keyword in ["not_found", "404", "model", "invalid"]):
+                        last_error = model_err
+                        print(f"⚠️  Model {model_name} not available: {str(model_err)[:100]}")
+                        continue  # Try next model
+                    else:
+                        # If it's an authentication, quota, or other error, don't try other models
+                        print(f"❌ Non-model error with {model_name}: {str(model_err)[:100]}")
+                        raise
+            
+            if not response:
+                error_msg = f"Could not find a working Claude model. Tried: {models_to_try}. Last error: {str(last_error)[:200] if last_error else 'Unknown'}"
+                print(f"❌ {error_msg}")
+                # Return error instead of raising to allow workflow to continue
+                return {
+                    "is_denial": False,
+                    "error": error_msg,
+                    "extraction": None
+                }
             
             result = self._parse_response(response.content[0].text)
             

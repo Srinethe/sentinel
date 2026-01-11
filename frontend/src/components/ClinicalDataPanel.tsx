@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Stethoscope, AlertTriangle, FileCode, Activity } from 'lucide-react';
+import { Stethoscope, AlertTriangle, FileCode, Activity, Download, ArrowRight } from 'lucide-react';
 import type { SOAPNote, ClinicalEntity, PreemptiveAlert, ICDCode, PolicyGap } from '@/lib/api';
 
 interface ClinicalDataPanelProps {
@@ -12,6 +12,8 @@ interface ClinicalDataPanelProps {
   policyGaps?: PolicyGap[];
   denialRisk?: string;
   medicalNecessityScore?: number;
+  caseId?: string | null;
+  onContinue?: () => void;
 }
 
 export function ClinicalDataPanel({
@@ -22,6 +24,8 @@ export function ClinicalDataPanel({
   policyGaps,
   denialRisk,
   medicalNecessityScore,
+  caseId,
+  onContinue,
 }: ClinicalDataPanelProps) {
   const hasData = soapNote || clinicalEntities?.length || icdCodes?.length;
   
@@ -174,6 +178,41 @@ export function ClinicalDataPanel({
             </div>
           </div>
         )}
+
+        {/* Action Buttons */}
+        <div className="pt-4 border-t border-slate-800 flex gap-3">
+          {caseId && (
+            <button
+              onClick={async () => {
+                try {
+                  const response = await fetch(`http://localhost:8000/api/case/${caseId}/audit-report`);
+                  const blob = await response.blob();
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `audit-report-${caseId}.pdf`;
+                  a.click();
+                  window.URL.revokeObjectURL(url);
+                } catch (error) {
+                  console.error('Failed to download audit report:', error);
+                }
+              }}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm font-medium text-white transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Download Audit Report PDF
+            </button>
+          )}
+          {onContinue && (
+            <button
+              onClick={onContinue}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 rounded-lg text-sm font-semibold text-white transition-all"
+            >
+              Continue to Step 3
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
     </motion.div>
   );

@@ -1,17 +1,20 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File, Form, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import uuid
 import asyncio
 from typing import Optional
+from datetime import datetime
 
 from app.agents.orchestrator import SentinelOrchestrator
 from app.services.vector_db import PolicyVectorStore
+from app.services.pdf_generator import PDFGenerator
 from app.models.schemas import CaseResponse, AgentUpdate
 from app.config import get_settings
 
 # In-memory store for demo (use real DB in production)
 cases_store: dict = {}
+pdf_generator = PDFGenerator()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -20,7 +23,20 @@ async def lifespan(app: FastAPI):
     
     # Initialize vector store with payer policies
     app.state.vector_store = PolicyVectorStore()
-    await app.state.vector_store.load_policies("app/data/payer_policies/")
+    
+    # Try to load policies, but don't fail if API quota is exceeded
+    try:
+        await app.state.vector_store.load_policies("app/data/payer_policies/")
+        print("✅ Vector store loaded successfully")
+    except Exception as e:
+        error_msg = str(e)
+        if "quota" in error_msg.lower() or "429" in error_msg:
+            print("⚠️  WARNING: OpenAI API quota exceeded. Vector store not loaded.")
+            print("   The app will still work, but policy RAG features will be limited.")
+            print("   To fix: Add billing/credits to your OpenAI account or use a different API key.")
+        else:
+            print(f"⚠️  WARNING: Failed to load vector store: {error_msg}")
+            print("   The app will still work, but policy RAG features will be limited.")
     
     # Initialize the orchestrator with all 4 agents
     app.state.orchestrator = SentinelOrchestrator(app.state.vector_store)
@@ -115,6 +131,12 @@ async def process_text_dictation(
     """
     case_id = str(uuid.uuid4())[:8]
     
+    print(f"🆕 NEW DICTATION REQUEST:")
+    print(f"   Case ID: {case_id}")
+    print(f"   Patient: {patient_name}")
+    print(f"   Dictation length: {len(dictation)} chars")
+    print(f"   Dictation preview: {dictation[:200]}...")
+    
     orchestrator: SentinelOrchestrator = app.state.orchestrator
     result = await orchestrator.process_dictation(
         case_id=case_id,
@@ -122,6 +144,14 @@ async def process_text_dictation(
         dictation_text=dictation
     )
     
+    print(f"✅ Dictation processing complete for case {case_id}")
+    print(f"   Result keys: {list(result.keys())}")
+    print(f"   ICD codes: {len(result.get('icd_codes', []))}")
+    print(f"   Alerts: {len(result.get('preemptive_alerts', []))}")
+    
+    # Ensure case_id and patient_name are in the stored result
+    result['case_id'] = case_id
+    result['patient_name'] = patient_name
     cases_store[case_id] = result
     
     return {
@@ -134,7 +164,8 @@ async def process_text_dictation(
         "policy_gaps": result.get("policy_gaps"),
         "preemptive_alerts": result.get("preemptive_alerts"),
         "denial_risk": result.get("denial_risk"),
-        "medical_necessity_score": result.get("medical_necessity_score")
+        "medical_necessity_score": result.get("medical_necessity_score"),
+        "patient_name": patient_name
     }
 
 
@@ -152,20 +183,47 @@ async def process_denial_pdf(
     Reads denial letter, extracts reason and deadline, generates appeal letter
     and P2P talking points.
     """
-    if not file.filename.endswith('.pdf'):
+    if not file.filename or not file.filename.endswith('.pdf'):
         raise HTTPException(status_code=400, detail="Only PDF files are supported")
     
     case_id = str(uuid.uuid4())[:8]
-    pdf_bytes = await file.read()
     
-    orchestrator: SentinelOrchestrator = app.state.orchestrator
-    result = await orchestrator.process_denial(
-        case_id=case_id,
-        patient_name=patient_name,
-        pdf_bytes=pdf_bytes
-    )
+    try:
+        print(f"📥 Received PDF upload: {file.filename}, size: {file.size if hasattr(file, 'size') else 'unknown'}")
+        pdf_bytes = await file.read()
+        print(f"✅ Read PDF: {len(pdf_bytes)} bytes")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to read PDF file: {str(e)}")
     
+    if not pdf_bytes:
+        raise HTTPException(status_code=400, detail="PDF file is empty")
+    
+    try:
+        orchestrator: SentinelOrchestrator = app.state.orchestrator
+        print(f"🚀 Starting denial processing for case: {case_id}")
+        result = await orchestrator.process_denial(
+            case_id=case_id,
+            patient_name=patient_name,
+            pdf_bytes=pdf_bytes
+        )
+        print(f"✅ Denial processing complete for case: {case_id}")
+    except Exception as e:
+        import traceback
+        error_msg = f"Error processing denial: {str(e)}"
+        print(f"❌ {error_msg}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=error_msg)
+    
+    # Store result with case_id and patient_name
+    result['case_id'] = case_id
+    result['patient_name'] = patient_name
     cases_store[case_id] = result
+    print(f"💾 Stored case {case_id} in cases_store. Keys: {list(result.keys())}")
+    print(f"   Has rebuttal_letter: {bool(result.get('rebuttal_letter'))}")
+    print(f"   Has talking_points: {bool(result.get('talking_points'))}")
+    print(f"💾 Stored case {case_id} in cases_store. Keys: {list(result.keys())}")
+    print(f"   Has rebuttal_letter: {bool(result.get('rebuttal_letter'))}")
+    print(f"   Has talking_points: {bool(result.get('talking_points'))}")
     
     return {
         "case_id": case_id,
@@ -246,6 +304,132 @@ async def get_case(case_id: str):
     if case_id not in cases_store:
         raise HTTPException(status_code=404, detail="Case not found")
     return cases_store[case_id]
+
+@app.get("/api/case/{case_id}/audit-report")
+async def get_audit_report_pdf(case_id: str):
+    """Generate and return audit report PDF"""
+    # Try to find case - check both exact match and partial match
+    case = None
+    if case_id in cases_store:
+        case = cases_store[case_id]
+    else:
+        # Try to find by partial match (case IDs might be shortened)
+        for stored_id, stored_case in cases_store.items():
+            if case_id in stored_id or stored_id in case_id:
+                case = stored_case
+                break
+    
+    if not case:
+        raise HTTPException(
+            status_code=404, 
+            detail=f"Case not found. Available cases: {list(cases_store.keys())[:5]}"
+        )
+    
+    try:
+        pdf_bytes = pdf_generator.generate_audit_report(case)
+        
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=audit-report-{case_id}.pdf"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to generate PDF: {str(e)}")
+
+@app.get("/api/case/{case_id}/rebuttal-pdf")
+async def get_rebuttal_pdf(case_id: str):
+    """Generate and return rebuttal letter PDF"""
+    print(f"📥 Request for rebuttal PDF: case_id={case_id}")
+    print(f"📋 Available cases: {list(cases_store.keys())}")
+    
+    # Try to find case - check both exact match and partial match
+    case = None
+    matched_id = None
+    
+    if case_id in cases_store:
+        case = cases_store[case_id]
+        matched_id = case_id
+        print(f"✅ Found exact match: {case_id}")
+    else:
+        # Try to find by partial match (case IDs might be shortened)
+        for stored_id, stored_case in cases_store.items():
+            if case_id in stored_id or stored_id in case_id:
+                case = stored_case
+                matched_id = stored_id
+                print(f"✅ Found partial match: {case_id} -> {stored_id}")
+                break
+    
+    if not case:
+        available = list(cases_store.keys())[:10]
+        error_msg = f"Case '{case_id}' not found. Available cases: {available}"
+        print(f"❌ {error_msg}")
+        raise HTTPException(status_code=404, detail=error_msg)
+    
+    # Check if case has rebuttal_letter (check for both None and empty string)
+    rebuttal_letter = case.get('rebuttal_letter')
+    if not rebuttal_letter or (isinstance(rebuttal_letter, str) and not rebuttal_letter.strip()):
+        print(f"⚠️  Case {matched_id} found but rebuttal_letter is empty or missing")
+        print(f"   rebuttal_letter value: {repr(rebuttal_letter)}")
+        print(f"   Case keys: {list(case.keys())}")
+        # Try to generate a basic rebuttal if we have denial_reason
+        if case.get('denial_reason'):
+            print(f"   Generating basic rebuttal from denial_reason...")
+            case['rebuttal_letter'] = f"""# APPEAL LETTER
+
+**Date:** {datetime.now().strftime('%B %d, %Y')}  
+**RE:** Appeal of Denial - Medical Necessity  
+**Patient:** {case.get('patient_name', 'Patient')}  
+**Claim:** {case.get('case_id', 'N/A')}
+
+---
+
+Dear Medical Director,
+
+I am writing to formally appeal the denial of medical necessity for our patient.
+
+## Rebuttal of Denial Reason
+
+{case.get('denial_reason', 'Denial reason not specified')}
+
+## Request
+
+We request immediate reversal of this denial and authorization for the requested services.
+
+Please contact me for Peer-to-Peer review at your earliest convenience.
+
+Respectfully,  
+[Attending Physician]
+"""
+            # Also ensure talking_points exists
+            if not case.get('talking_points'):
+                case['talking_points'] = [
+                    f"Patient meets medical necessity criteria for {case.get('denial_reason', 'the requested service')}",
+                    "Clinical documentation supports the requested level of care",
+                    "Request immediate peer-to-peer review for expedited resolution"
+                ]
+        else:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Case found but no rebuttal letter available and no denial_reason to generate one. Case has denial_detected: {case.get('denial_detected')}"
+            )
+    
+    try:
+        print(f"📄 Generating PDF for case {matched_id}...")
+        pdf_generator: PDFGenerator = app.state.pdf_generator
+        pdf_bytes = pdf_generator.generate_rebuttal_letter(case)
+        print(f"✅ PDF generated: {len(pdf_bytes)} bytes")
+        
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=rebuttal-letter-{case_id}.pdf"}
+        )
+    except Exception as e:
+        import traceback
+        error_msg = f"Failed to generate PDF: {str(e)}"
+        print(f"❌ {error_msg}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=error_msg)
 
 
 # ==================== WEBSOCKET FOR REAL-TIME UPDATES ====================

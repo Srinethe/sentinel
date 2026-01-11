@@ -1,5 +1,6 @@
 import anthropic
 import json
+from datetime import datetime
 from app.services.vector_db import PolicyVectorStore
 from app.config import get_settings
 
@@ -40,8 +41,34 @@ class CoderAgent:
         )
         
         # Step 2: Generate ICD codes and audit against policy
-        audit_prompt = f"""You are an expert medical coder and insurance policy auditor. 
+        # Add timestamp to prompt to ensure fresh analysis
+        timestamp = datetime.now().isoformat()
+        
+        # Check if policy context is relevant to the diagnosis
+        diagnoses_str = ' '.join(diagnoses).lower()
+        policy_relevant = any(keyword in policy_context.lower() for keyword in [
+            diagnoses_str.split()[0] if diagnoses_str else '',
+            'cardiac', 'heart', 'myocardial', 'infarction', 'nstemi', 'stemi', 'troponin',
+            'chest pain', 'coronary', 'angina'
+        ]) if 'nstemi' in diagnoses_str.lower() or 'myocardial' in diagnoses_str.lower() else True
+        
+        # ICD-11 coding guidance for common conditions
+        icd11_guidance = ""
+        if 'nstemi' in diagnoses_str or 'non-st elevation' in diagnoses_str or 'myocardial infarction' in diagnoses_str:
+            icd11_guidance = """
+ICD-11 CODING FOR NSTEMI:
+- Primary Code: BA41.1 (Acute non-ST elevation myocardial infarction)
+- Post-coordination: Can add codes for specific location (anterior, inferior), underlying coronary atherosclerosis, or complications
+- Medical Necessity: NSTEMI requires elevated troponin, ischemic symptoms (chest pain, dyspnea), and ECG findings (ST depression/T-wave inversion, but NOT ST elevation)
+- Documentation Requirements: Must show troponin elevation above reference range, ischemic symptoms, and ECG changes or imaging confirmation
+- Justification: NSTEMI indicates heart muscle damage from partial artery blockage, requiring urgent care to prevent severe outcomes
+- Type 2 MI: If troponin rise is due to oxygen supply/demand imbalance (sepsis, respiratory failure), code underlying cause first but still bill as NSTEMI if symptoms fit
+"""
+        
+        audit_prompt = f"""You are an expert medical coder and insurance policy auditor specializing in ICD-11 coding. 
 Analyze this clinical documentation and identify potential issues BEFORE claim submission.
+
+ANALYSIS TIMESTAMP: {timestamp}
 
 CLINICAL DOCUMENTATION:
 Subjective: {soap_note.get('subjective', 'N/A')}
@@ -55,8 +82,19 @@ CLINICAL ENTITIES EXTRACTED:
 PROPOSED TREATMENTS:
 {json.dumps(proposed_treatments or [], indent=2)}
 
-RELEVANT INSURANCE POLICY REQUIREMENTS:
+DIAGNOSES IDENTIFIED: {', '.join(diagnoses) if diagnoses else 'None specified'}
+
+{icd11_guidance}
+
+INSURANCE POLICY REQUIREMENTS:
 {policy_context}
+
+⚠️ IMPORTANT: If the policy context above does not match the diagnosis (e.g., shows hyperkalemia policies for an NSTEMI case), 
+you should:
+1. Note this as a "MISSING_DATA" alert indicating relevant policies are not available
+2. Apply GENERAL medical necessity principles for the actual diagnosis
+3. Use ICD-11 coding standards (like BA41.1 for NSTEMI) regardless of available policies
+4. Focus on documentation gaps specific to the ACTUAL diagnosis, not the mismatched policies
 
 Perform the following analysis and return ONLY valid JSON:
 
@@ -90,11 +128,15 @@ Perform the following analysis and return ONLY valid JSON:
     "recommendations": ["List of recommendations to strengthen the case"]
 }}
 
-IMPORTANT: 
-- Flag if any lab values are below insurance thresholds (e.g., K+ below 5.5 mmol/L for hyperkalemia)
-- Flag if required tests are missing (e.g., EKG for cardiac conditions)
-- Suggest the most specific ICD codes possible
-- Be proactive - catch issues before they become denials"""
+CRITICAL INSTRUCTIONS: 
+- Use ICD-11 codes (e.g., BA41.1 for NSTEMI, not ICD-10)
+- Flag if any lab values are below insurance thresholds FOR THE ACTUAL DIAGNOSIS (e.g., troponin elevation for NSTEMI, not K+ for hyperkalemia)
+- Flag if required tests are missing FOR THE ACTUAL DIAGNOSIS (e.g., serial troponins, ECG, cardiac enzymes for NSTEMI)
+- If policies don't match the diagnosis, create a "MISSING_DATA" alert stating: "Insurance policies provided are for [policy topic], not relevant to [actual diagnosis] admission. Obtain and review [diagnosis]-specific admission criteria policies."
+- Suggest the most specific ICD-11 codes possible based on the ACTUAL diagnosis
+- Focus on documentation gaps specific to the ACTUAL diagnosis presented
+- Be proactive - catch issues before they become denials
+- For NSTEMI: Ensure troponin values include reference ranges, peak values are documented, ECG findings are clear, and cardiac catheterization authorization is verified if mentioned"""
 
         response = await self.client.messages.create(
             model=self.model,
@@ -118,16 +160,44 @@ IMPORTANT:
         """Extract diagnosis keywords for policy lookup"""
         diagnoses = []
         
-        # From SOAP assessment
+        # From SOAP assessment - extract key terms
         if soap_note.get("assessment"):
-            diagnoses.append(soap_note["assessment"])
+            assessment = soap_note["assessment"]
+            diagnoses.append(assessment)
+            # Extract key diagnosis terms (NSTEMI, STEMI, MI, etc.)
+            assessment_lower = assessment.lower()
+            if 'nstemi' in assessment_lower or 'non-st elevation' in assessment_lower:
+                diagnoses.append("NSTEMI")
+                diagnoses.append("myocardial infarction")
+                diagnoses.append("acute coronary syndrome")
+            if 'stemi' in assessment_lower or 'st elevation' in assessment_lower:
+                diagnoses.append("STEMI")
+                diagnoses.append("myocardial infarction")
+            if 'myocardial' in assessment_lower or 'infarction' in assessment_lower:
+                diagnoses.append("cardiac")
+                diagnoses.append("coronary")
         
         # From entities
         for entity in entities:
             if entity.get("type") in ["diagnosis", "symptom"]:
-                diagnoses.append(entity.get("name", ""))
+                name = entity.get("name", "")
+                if name:
+                    diagnoses.append(name)
+                    # Add related terms for cardiac conditions
+                    name_lower = name.lower()
+                    if any(term in name_lower for term in ['chest', 'cardiac', 'heart', 'troponin', 'coronary']):
+                        diagnoses.append("cardiac")
         
-        return [d for d in diagnoses if d][:5]  # Limit to top 5
+        # Remove duplicates and limit
+        unique_diagnoses = []
+        seen = set()
+        for d in diagnoses:
+            d_lower = d.lower()
+            if d_lower not in seen and d.strip():
+                unique_diagnoses.append(d)
+                seen.add(d_lower)
+        
+        return unique_diagnoses[:8]  # Increased limit to capture more relevant terms
     
     def _parse_json_response(self, text: str) -> dict:
         """Parse JSON from response"""

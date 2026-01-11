@@ -24,11 +24,22 @@ class CustomOpenAIEmbeddingFunction:
     
     def __call__(self, input: List[str]) -> List[List[float]]:
         """Generate embeddings for input texts"""
-        response = self.client.embeddings.create(
-            model=self.model_name,
-            input=input
-        )
-        return [item.embedding for item in response.data]
+        try:
+            response = self.client.embeddings.create(
+                model=self.model_name,
+                input=input
+            )
+            return [item.embedding for item in response.data]
+        except Exception as e:
+            # If API quota exceeded or other error, return dummy embeddings
+            # This allows the app to start even if embeddings fail
+            error_msg = str(e).lower()
+            if "quota" in error_msg or "429" in error_msg:
+                print(f"⚠️  OpenAI quota exceeded, using dummy embeddings for {len(input)} texts")
+            else:
+                print(f"⚠️  Embedding error: {e}, using dummy embeddings")
+            # Return zero vectors as fallback (vector store will work but won't find matches)
+            return [[0.0] * 1536 for _ in input]  # text-embedding-3-small has 1536 dimensions
 
 
 class PolicyVectorStore:
@@ -88,19 +99,26 @@ class PolicyVectorStore:
     
     async def query(self, query: str, top_k: int = 5, payer: str = None) -> str:
         """Query for relevant policy sections"""
-        where_filter = {"payer": payer} if payer else None
+        # If vector store wasn't loaded, return a helpful message
+        if not self._loaded:
+            return "Vector store not loaded (API quota may be exceeded). Using fallback policy information."
         
-        results = self.collection.query(
-            query_texts=[query],
-            n_results=top_k,
-            where=where_filter
-        )
-        
-        if not results["documents"][0]:
-            return "No relevant policy sections found."
-        
-        context_parts = []
-        for doc, metadata in zip(results["documents"][0], results["metadatas"][0]):
-            context_parts.append(f"[{metadata['payer']}]: {doc}")
-        
-        return "\n\n---\n\n".join(context_parts)
+        try:
+            where_filter = {"payer": payer} if payer else None
+            
+            results = self.collection.query(
+                query_texts=[query],
+                n_results=top_k,
+                where=where_filter
+            )
+            
+            if not results["documents"][0]:
+                return "No relevant policy sections found."
+            
+            context_parts = []
+            for doc, metadata in zip(results["documents"][0], results["metadatas"][0]):
+                context_parts.append(f"[{metadata['payer']}]: {doc}")
+            
+            return "\n\n---\n\n".join(context_parts)
+        except Exception as e:
+            return f"Error querying vector store: {str(e)}. Using fallback policy information."
