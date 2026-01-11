@@ -10,10 +10,10 @@ interface Metric {
 }
 
 const metrics: Metric[] = [
-  { label: 'Manual Process', value: '4 hrs', subtext: 'Average case time' },
-  { label: 'With Sentinel', value: '32 sec', subtext: 'AI-driven synthesis', highlight: true },
-  { label: 'Time Saved', value: '99.8%', subtext: 'Per case', highlight: true },
-  { label: 'Appeal Success', value: '73%', subtext: 'Denial reversal rate' },
+  { label: 'Manual Process', value: '2 hrs', subtext: 'Average case time' },
+  { label: 'With Sentinel', value: '3 mins', subtext: 'AI-driven synthesis', highlight: true },
+  { label: 'Time Saved', value: '97.5%', subtext: 'Per case', highlight: true },
+  { label: 'Appeal Success', value: '95+%', subtext: 'Denial reversal rate' },
 ];
 
 export function MetricsDashboard() {

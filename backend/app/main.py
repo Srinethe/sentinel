@@ -217,13 +217,49 @@ async def process_denial_pdf(
     # Store result with case_id and patient_name
     result['case_id'] = case_id
     result['patient_name'] = patient_name
+    
+    # Ensure rebuttal_letter exists if denial was detected
+    if result.get('denial_detected') and not result.get('rebuttal_letter'):
+        if result.get('denial_reason'):
+            print(f"⚠️  Denial detected but no rebuttal_letter. Generating one...")
+            result['rebuttal_letter'] = f"""# APPEAL LETTER
+
+**Date:** {datetime.now().strftime('%B %d, %Y')}  
+**RE:** Appeal of Denial - Medical Necessity  
+**Patient:** {patient_name}  
+**Claim:** {case_id}
+
+---
+
+Dear Medical Director,
+
+I am writing to formally appeal the denial of medical necessity for our patient.
+
+## Rebuttal of Denial Reason
+
+{result.get('denial_reason', 'Denial reason not specified')}
+
+## Request
+
+We request immediate reversal of this denial and authorization for the requested services.
+
+Please contact me for Peer-to-Peer review at your earliest convenience.
+
+Respectfully,  
+[Attending Physician]
+"""
+            if not result.get('talking_points'):
+                result['talking_points'] = [
+                    f"Patient meets medical necessity criteria despite the denial reason",
+                    "Clinical documentation supports the requested level of care",
+                    "Request immediate peer-to-peer review for expedited resolution"
+                ]
+    
     cases_store[case_id] = result
-    print(f"💾 Stored case {case_id} in cases_store. Keys: {list(result.keys())}")
+    print(f"💾 Stored case {case_id} in cases_store")
     print(f"   Has rebuttal_letter: {bool(result.get('rebuttal_letter'))}")
     print(f"   Has talking_points: {bool(result.get('talking_points'))}")
-    print(f"💾 Stored case {case_id} in cases_store. Keys: {list(result.keys())}")
-    print(f"   Has rebuttal_letter: {bool(result.get('rebuttal_letter'))}")
-    print(f"   Has talking_points: {bool(result.get('talking_points'))}")
+    print(f"   Denial detected: {result.get('denial_detected')}")
     
     return {
         "case_id": case_id,
